@@ -2,8 +2,10 @@ import sys
 import string
 import math
 import re
-from dataclasses import dataclass
+from statistics import median, mean
 from collections import defaultdict, namedtuple
 
-sys.stdin.read()
+inp = sys.stdin.read().strip()
+print(inp)
+print(len(inp.split("\n")))
 
