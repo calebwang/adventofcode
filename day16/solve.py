@@ -43,23 +43,23 @@ def parse_pkt(binpkt):
         pktlen = 0
         print("tlenid: " + str(tlenid))
         if tlenid == 0:
-            subpktslen = int(binpkt[7:7+15], 2)
+            total_subpkts_len = int(binpkt[7:7+15], 2)
             readlen = 0
-            while readlen < subpktslen:
-                pkt, subpktlen = parse_pkt(binpkt[22 + readlen: 22 + subpktslen])
-                readlen += subpktlen
-                subpkts.append(pkt)
+            while readlen < total_subpkts_len:
+                subpkt, subpkt_len = parse_pkt(binpkt[22 + readlen: 22 + total_subpkts_len])
+                readlen += subpkt_len
+                subpkts.append(subpkt)
             pktlen = 22 + readlen
         elif tlenid == 1:
-            numsubpkts = int(binpkt[7:7+11], 2)
-            readsubpkts = 0
+            num_subpkts = int(binpkt[7:7+11], 2)
+            read_subpkts = 0
             readlen = 0
-            print("nsubpkts", numsubpkts)
-            while readsubpkts < numsubpkts:
-                pkt, subpktlen = parse_pkt(binpkt[18 + readlen:])
-                readlen += subpktlen
-                readsubpkts += 1
-                subpkts.append(pkt)
+            print("nsubpkts", num_subpkts)
+            while read_subpkts < num_subpkts:
+                subpkt, subpkt_len = parse_pkt(binpkt[18 + readlen:])
+                readlen += subpkt_len
+                read_subpkts += 1
+                subpkts.append(subpkt)
             pktlen = readlen + 18
 
         if ptype == 0:
