@@ -1,0 +1,6 @@
+#!/bin/bash
+python solve.py < input
+fswatch solve.py | while read event; do
+    echo "========================="
+    python solve.py < input
+done
