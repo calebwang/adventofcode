@@ -5,6 +5,7 @@ import re
 from statistics import median, mean
 from collections import defaultdict, namedtuple, Counter
 import itertools
+import numpy as np
 
 inp = sys.stdin.read().strip()
 
@@ -13,66 +14,91 @@ scanners_inp = inp.split("\n\n")
 scanners = []
 for s in scanners_inp:
     pts = s.split("\n")[1:]
-    coords = [tuple(map(int, pt.split(","))) for pt in pts]
+    coords = [np.array(list(map(int, pt.split(",")))) for pt in pts]
     scanners.append(coords)
 
-def rot(coord, axis, amt):
-    if amt == 0:
-        return coord
-    if amt < 0:
-        amt = amt % 4
+def cos(amt):
+    if amt % 4 == 0:
+        return 1
+    if amt % 4 == 1:
+        return 0
+    if amt % 4 == 2:
+        return -1
+    if amt % 4 == 3:
+        return 0
 
-    other_axes = list(set(range(3)) - set([axis]))
-    nc = list(coord)
-    nc[other_axes[0]], nc[other_axes[1]] = -1 * nc[other_axes[1]], nc[other_axes[0]]
-    return rot(tuple(nc), axis, amt - 1)
+def sin(amt):
+    if amt % 4 == 0:
+        return 0
+    if amt % 4 == 1:
+        return 1
+    if amt % 4 == 2:
+        return 0
+    if amt % 4 == 3:
+        return -1
 
-def _rotators():
-    def get_rotator(a1, a2, a3):
-        return lambda coord: rot(rot(rot(coord, 0, a1), 1, a2), 2, a3)
 
-    result_set = set()
-    t = (1, 2, 3)
-    rotators = []
+memo = dict()
+def rotmat(axis, amt):
+    if (axis, amt) in memo:
+        return memo[(axis, amt)]
+    rotation_vals = [[cos(amt), -sin(amt)], [sin(amt), cos(amt)]]
+    rot_mat = []
+    k = 0
+    for i in range(3):
+        row = []
+        if i != axis:
+            row = rotation_vals[k]
+            row.insert(axis, 0)
+            k += 1
+        else:
+            row = [1 if j == axis else 0 for j in range(3)]
+        rot_mat.append(row)
+    arr = np.array(rot_mat)
+    if axis == 1:
+        arr = arr.transpose()
+
+    memo[(axis, amt)] = arr
+    return arr
+
+def _rotation_matrices():
+    matrices = []
 
     for amt1 in range(4):
         for amt2 in range(4):
             for amt3 in range(4):
-                rotator = get_rotator(amt1, amt2, amt3)
-                result = rotator(t)
-                if result not in result_set:
-                    rotators.append(get_rotator(amt1, amt2, amt3))
-                    result_set.add(result)
+                arr1 = rotmat(0, amt1)
+                arr2 = rotmat(1, amt2)
+                arr3 = rotmat(2, amt3)
 
-    return rotators
+                rotation_matrix = np.matmul(np.matmul(arr1, arr2), arr3)
+                if not any([np.array_equal(rotation_matrix, m) for m in matrices]):
+                    matrices.append(rotation_matrix)
 
-rotators = _rotators()
+    return matrices
 
-def orientations(coord):
-    return [r(coord) for r in rotators]
+rotation_matrices = _rotation_matrices()
+print(len(rotation_matrices))
 
-# print(sorted(orientations((1, 2, 3))))
-
-def transpose(coord, vector):
-    return (coord[0] + vector[0], coord[1] + vector[1], coord[2] + vector[2])
-
-def difference(coord1, coord2):
-    return tuple( coord1[i] - coord2[i] for i in range(3) )
+def rotate(matrix, coord):
+    return np.dot(matrix, coord.transpose()).transpose()
 
 def match(scanner1, scanner2):
-    best_rotator = None
-    s1_set = set(scanner1)
-    for rotator in rotators:
+    s1_set = set([tuple(a) for a in scanner1])
+    for m in rotation_matrices:
+        rotated_s2 = [
+            rotate(m, c) for c in scanner2
+        ]
+
         difference_counts = defaultdict(int)
-        rotated_s2 = [rotator(c) for c in scanner2]
         for s1c in scanner1:
             for rs2c in rotated_s2:
-                d = difference(s1c, rs2c)
-                difference_counts[d] += 1
-                if difference_counts[d] >= 12:
-                    f = lambda c: transpose(rotator(c), d)
+                d = s1c - rs2c
+                difference_counts[tuple(d)] += 1
+                if difference_counts[tuple(d)] >= 12:
                     print(d)
-                    return f, d
+                    return lambda c: rotate(m, c) + d, d
+
     return None, None
 
 
@@ -97,7 +123,7 @@ def part1():
     pts = set()
     for s in oriented_scanners:
         for pt in s:
-                pts.add(pt)
+            pts.add(tuple(pt))
     print(len(pts))
 
 
