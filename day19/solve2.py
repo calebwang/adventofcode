@@ -5,7 +5,6 @@ import re
 from statistics import median, mean
 from collections import defaultdict, namedtuple, Counter
 import itertools
-import numpy as np
 
 inp = sys.stdin.read().strip()
 
@@ -14,7 +13,7 @@ scanners_inp = inp.split("\n\n")
 scanners = []
 for s in scanners_inp:
     pts = s.split("\n")[1:]
-    coords = [np.array(list(map(int, pt.split(",")))) for pt in pts]
+    coords = [tuple(map(int, pt.split(","))) for pt in pts]
     scanners.append(coords)
 
 def cos(amt):
@@ -37,13 +36,45 @@ def sin(amt):
     if amt % 4 == 3:
         return -1
 
+def transpose(mat):
+    result = []
+    for c in range(3):
+        result.append([r[c] for r in mat])
+    return result
+
+def matmult(mat1, mat2):
+    result = []
+    for r in range(3):
+        result.append([])
+        for c in range(3):
+            mat2col = [r[c] for r in mat2]
+            mat1row = mat1[r]
+            val = sum([mat1row[i] * mat2col[i] for i in range(3)])
+            result[r].append(val)
+    return result
+
+def dot(m, c):
+    return tuple(
+        sum(
+            row[i] * c[i]
+            for i in range(3)
+        )
+        for row in m
+    )
+
+def difference(c1, c2):
+    return tuple(c1[i] - c2[i] for i in range(3))
+
+def add(c, vector):
+    return tuple(c[i] + vector[i] for i in range(3))
+
 
 memo = dict()
 def rotmat(axis, amt):
     if (axis, amt) in memo:
         return memo[(axis, amt)]
     rotation_vals = [[cos(amt), -sin(amt)], [sin(amt), cos(amt)]]
-    rot_mat = []
+    mat = []
     k = 0
     for i in range(3):
         row = []
@@ -53,17 +84,21 @@ def rotmat(axis, amt):
             k += 1
         else:
             row = [1 if j == axis else 0 for j in range(3)]
-        rot_mat.append(row)
-    arr = np.array(rot_mat)
+        mat.append(row)
     if axis == 1:
-        arr = arr.transpose()
+        mat = transpose(mat)
 
-    memo[(axis, amt)] = arr
-    return arr
+    memo[(axis, amt)] = mat
+    return mat
+
+def rotate(matrix, coord):
+    return dot(matrix, coord)
 
 def _rotation_matrices():
     matrices = []
 
+    results = set()
+    testcoord = (1, 2, 3)
     for amt1 in range(4):
         for amt2 in range(4):
             for amt3 in range(4):
@@ -71,20 +106,20 @@ def _rotation_matrices():
                 arr2 = rotmat(1, amt2)
                 arr3 = rotmat(2, amt3)
 
-                rotation_matrix = np.matmul(np.matmul(arr1, arr2), arr3)
-                if not any([np.array_equal(rotation_matrix, m) for m in matrices]):
+                rotation_matrix = matmult(matmult(arr1, arr2), arr3)
+                r = rotate(rotation_matrix, testcoord)
+                if r not in results:
                     matrices.append(rotation_matrix)
+                    results.add(r)
 
     return matrices
 
 rotation_matrices = _rotation_matrices()
 print(len(rotation_matrices))
 
-def rotate(matrix, coord):
-    return np.dot(matrix, coord.transpose()).transpose()
 
 def match(scanner1, scanner2):
-    s1_set = set([tuple(a) for a in scanner1])
+    s1_set = set(scanner1)
     for m in rotation_matrices:
         rotated_s2 = [
             rotate(m, c) for c in scanner2
@@ -93,11 +128,11 @@ def match(scanner1, scanner2):
         difference_counts = defaultdict(int)
         for s1c in scanner1:
             for rs2c in rotated_s2:
-                d = s1c - rs2c
-                difference_counts[tuple(d)] += 1
-                if difference_counts[tuple(d)] >= 12:
+                d = difference(s1c, rs2c)
+                difference_counts[d] += 1
+                if difference_counts[d] >= 12:
                     print(d)
-                    return lambda c: rotate(m, c) + d, d
+                    return lambda c: add(rotate(m, c), d), d
 
     return None, None
 
