@@ -103,6 +103,3 @@ def part2():
     print(outcomes((p1_pos, 0), (p2_pos, 0), '1'))
 
 
-
-
-"""
