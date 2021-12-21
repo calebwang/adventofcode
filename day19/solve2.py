@@ -158,7 +158,7 @@ def part1():
     pts = set()
     for s in oriented_scanners:
         for pt in s:
-            pts.add(tuple(pt))
+            pts.add(pt)
     print(len(pts))
 
 
