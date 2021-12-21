@@ -1,5 +1,0 @@
-#!/bin/bash
-./get $1 > input
-fswatch solve.py | while read event; do
-    python solve.py < input
-done

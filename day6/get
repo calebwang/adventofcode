@@ -1,2 +1,0 @@
-#!/bin/bash
-curl --cookie "session=53616c7465645f5f9aed8c05c3bfac9f77a7192cdd95eb2e1b78305b083c63e41ceeaa067640a23c12750b74c2b7ed05" https://adventofcode.com/2021/day/$1/input
