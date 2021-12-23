@@ -207,15 +207,7 @@ def part2():
         return 1 if inst == "on" else 0
 
     lit_regions = []
-    i = 0
-    for _bit, _region in instructions:
-        bit, region = parity(_bit), make_region(_region)
-        if bit:
-            lit_regions.append(region)
-            break
-        i += 1
-
-    for inst, bounds in instructions[i + 1:]:
+    for inst, bounds in instructions:
         new_region = make_region(bounds)
         new_bit = parity(inst)
 
