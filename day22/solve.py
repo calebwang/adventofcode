@@ -47,17 +47,6 @@ def part1():
                             onlights.remove(c)
     print(len(onlights))
 
-class Node(object):
-    def __init__(self, minval, maxval):
-        self.value = minval
-        self.left = None
-        if maxval is not None:
-            self.right = Node(maxval, None)
-
-class RangeTree(object):
-    def __init__(self, root):
-        self.root = root
-
 class Coord(object):
     def __init__(self, x, y, z):
         self.x, self.y, self.z = x, y, z
